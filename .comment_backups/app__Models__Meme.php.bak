@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Meme extends Model
+{
+    protected $fillable = [
+        'image_path',
+        'battle_id',
+        'user_id'
+    ];
+
+    /**
+     * Relation avec la battle
+     */
+    public function battle(): BelongsTo
+    {
+        return $this->belongsTo(Battle::class);
+    }
+
+    /**
+     * Relation avec l'utilisateur créateur
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relation avec les votes
+     */
+    public function votes(): HasMany
+    {
+        return $this->hasMany(Vote::class);
+    }
+
+    /**
+     * Obtenir le nombre de votes
+     */
+    public function getVotesCountAttribute(): int
+    {
+        return $this->votes()->count();
+    }
+
+    /**
+     * Vérifier si un utilisateur a voté pour ce mème
+     */
+    public function hasUserVoted(User $user): bool
+    {
+        return $this->votes()->where('user_id', $user->id)->exists();
+    }
+}

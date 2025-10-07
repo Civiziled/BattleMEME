@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Small overrides to ensure legacy `bg-white` elements look correct in forced dark mode */
+.dark .bg-white {
+	background-color: theme('colors.slate.800');
+}
+.dark .text-gray-900 {
+	color: theme('colors.white');
+}
+.dark .shadow-sm {
+	box-shadow: 0 1px 2px 0 rgba(0,0,0,0.5);
+}

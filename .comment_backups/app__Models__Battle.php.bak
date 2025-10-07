@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
+
+class Battle extends Model
+{
+    protected $fillable = [
+        'title',
+        'description', 
+        'deadline',
+        'user_id'
+    ];
+
+    protected $casts = [
+        'deadline' => 'datetime'
+    ];
+
+    /**
+     * Relation avec l'utilisateur créateur
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relation avec les mèmes soumis
+     */
+    public function memes(): HasMany
+    {
+        return $this->hasMany(Meme::class);
+    }
+
+    /**
+     * Vérifie si la battle est encore ouverte
+     */
+    public function isOpen(): bool
+    {
+        return $this->deadline->isFuture();
+    }
+
+    /**
+     * Méthode pour récupérer le classement des mèmes
+     */
+    public function getRankedMemes()
+    {
+        return $this->memes()
+            ->withCount('votes')
+            ->orderBy('votes_count', 'desc')
+            ->get();
+    }
+}

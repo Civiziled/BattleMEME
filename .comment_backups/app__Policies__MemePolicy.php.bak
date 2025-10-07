@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\Meme;
+use App\Models\User;
+
+class MemePolicy
+{
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Meme $meme): bool
+    {
+        // Tout le monde peut voir un mème
+        return true;
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        // Seuls les utilisateurs connectés peuvent créer des mèmes
+        return true;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Meme $meme): bool
+    {
+        // Seul l'auteur peut supprimer son mème
+        return $user->id === $meme->user_id;
+    }
+
+    /**
+     * Determine whether the user can vote for the meme.
+     */
+    public function vote(User $user, Meme $meme): bool
+    {
+        // Ne peut pas voter pour son propre mème
+        if ($user->id === $meme->user_id) {
+            return false;
+        }
+
+        // Doit être lié à une battle ouverte
+        if (!$meme->battle->isOpen()) {
+            return false;
+        }
+
+        // Ne doit pas avoir déjà voté pour ce mème
+        if ($meme->hasUserVoted($user)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Determine whether the user can update the meme.
+     */
+    public function update(User $user, Meme $meme): bool
+    {
+        // Seul l'auteur peut modifier son mème
+        return $user->id === $meme->user_id;
+    }
+}

@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Battle;
+use App\Models\Meme;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
+class MemeController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function create(Battle $battle)
+    {
+        if (!$battle->isOpen()) {
+            return redirect()->route('battles.show', $battle)
+                ->with('error', 'Cette battle est fermée depuis le ' . $battle->deadline->format('d/m/Y à H:i'));
+        }
+
+        return view('memes.create', compact('battle'));
+    }
+
+    public function store(Request $request, Battle $battle)
+    {
+        if (!$battle->isOpen()) {
+            return redirect()->route('battles.show', $battle)
+                ->with('error', 'Cette battle est fermée depuis le ' . $battle->deadline->format('d/m/Y à H:i'));
+        }
+
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120|dimensions:min_width=100,min_height=100' // 5MB max, min 100x100px
+        ], [
+            'image.required' => 'Veuillez sélectionner une image.',
+            'image.image' => 'Le fichier doit être une image.',
+            'image.mimes' => 'L\'image doit être au format JPG, PNG, GIF ou WebP.',
+            'image.max' => 'L\'image ne doit pas dépasser 5MB.',
+            'image.dimensions' => 'L\'image doit faire au moins 100x100 pixels.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $imagePath = $request->file('image')->store('memes', 'public');
+
+        $meme = Meme::create([
+            'image_path' => $imagePath,
+            'battle_id' => $battle->id,
+            'user_id' => Auth::id()
+        ]);
+
+        return redirect()->route('battles.show', $battle)
+            ->with('success', 'Mème soumis avec succès !');
+    }
+
+    public function show(Meme $meme)
+    {
+        $meme->load(['battle', 'user', 'votes']);
+        return view('memes.show', compact('meme'));
+    }
+
+    public function destroy(Meme $meme)
+    {
+        Gate::authorize('delete', $meme);
+
+        if ($meme->image_path && Storage::disk('public')->exists($meme->image_path)) {
+            Storage::disk('public')->delete($meme->image_path);
+        }
+
+        $battleId = $meme->battle_id;
+        $meme->delete();
+
+        return redirect()->route('battles.show', $battleId)
+            ->with('success', 'Mème supprimé avec succès !');
+    }
+}

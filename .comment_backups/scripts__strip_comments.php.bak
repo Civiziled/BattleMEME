@@ -1,0 +1,120 @@
+<?php
+// Script pour supprimer les commentaires dans le dépôt (sauf README*).
+// Usage: php strip_comments.php
+
+set_time_limit(0);
+$root = __DIR__ . '/..';
+$backupDir = $root . '/.comment_backups';
+@mkdir($backupDir, 0755, true);
+
+$extensions = [
+    'php', 'blade.php', 'js', 'css', 'html', 'htm', 'sh', 'env', 'yml', 'yaml', 'py', 'ts', 'jsx', 'tsx'
+];
+
+$skipDirs = ['vendor', 'node_modules', '.git', 'storage', 'public/build', 'public/assets', '.comment_backups'];
+
+$modified = [];
+$scanned = 0;
+
+$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
+foreach ($it as $file) {
+    if (!$file->isFile()) continue;
+    $path = $file->getPathname();
+    $rel = substr($path, strlen($root) + 1);
+
+    // Skip backups and README files
+    if (stripos(basename($path), 'README') === 0) continue;
+
+    // Skip certain directories
+    foreach ($skipDirs as $d) {
+        if (strpos($rel, $d) === 0) continue 2;
+    }
+
+    // Determine extension (handle blade.php)
+    $isBlade = false;
+    if (str_ends_with($path, '.blade.php')) {
+        $ext = 'blade.php';
+        $isBlade = true;
+    } else {
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
+    }
+
+    if (!in_array($ext, $extensions)) continue;
+
+    $scanned++;
+    $orig = file_get_contents($path);
+    $new = $orig;
+
+    // Skip empty
+    if ($new === '') continue;
+
+    // PHP files: use token_get_all to safely remove comments
+    if ($ext === 'php') {
+        $tokens = token_get_all($new);
+        $result = '';
+        foreach ($tokens as $token) {
+            if (is_array($token)) {
+                $id = $token[0];
+                $text = $token[1];
+                if ($id === T_COMMENT || $id === T_DOC_COMMENT) {
+                    // skip
+                } else {
+                    $result .= $text;
+                }
+            } else {
+                $result .= $token;
+            }
+        }
+        $new = $result;
+    } else {
+        // Blade comments {{-- --}}
+        if ($isBlade) {
+            // remove {{-- ... --}}
+            $new = preg_replace('/\{\{--.*?--\}\}/s', '', $new);
+        }
+
+        // HTML comments
+        $new = preg_replace('/<!--.*?-->/s', '', $new);
+        // Multiline comments /* */
+        $new = preg_replace('/\/\*.*?\*\//s', '', $new);
+        // Single-line // comments (remove // when they are not part of URLs like http://)
+        // We'll remove //... only when the line does not contain 'http://' or 'https://' and when // is not at start of a URL-like token
+        $new = preg_replace_callback('/^.*$/m', function($m) {
+            $line = $m[0];
+            // If line contains http:// or https://, skip removal
+            if (strpos($line, 'http://') !== false || strpos($line, 'https://') !== false) {
+                return $line;
+            }
+            // Remove // comments that are not in strings (best-effort)
+            // This is a heuristic: remove // and everything after, unless line starts with // (then remove whole line)
+            if (preg_match('/^\s*\/\//', $line)) return '';
+            $pos = strpos($line, '//');
+            if ($pos !== false) {
+                return rtrim(substr($line, 0, $pos));
+            }
+            return $line;
+        }, $new);
+        // Shell/perl/python style # comments at line start (but keep shebang)
+        $new = preg_replace('/(?m)^(?!#!)\s*#.*$/', '', $new);
+    }
+
+    if ($new !== $orig) {
+        // Backup original
+        $bakPath = $backupDir . '/' . str_replace(['/','\\'], ['__','__'], $rel) . '.bak';
+        @mkdir(dirname($bakPath), 0755, true);
+        file_put_contents($bakPath, $orig);
+
+        // Write new
+        file_put_contents($path, $new);
+        $modified[] = $rel;
+    }
+}
+
+// Report
+echo "Scanned files: $scanned\n";
+echo "Modified files: " . count($modified) . "\n";
+foreach ($modified as $m) echo " - $m\n";
+
+echo "Backups stored in .comment_backups/\n";
+
+return 0;

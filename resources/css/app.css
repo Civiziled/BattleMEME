@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global override: for this requested change, force all text to white.
+	 This uses high specificity to override Tailwind utility colors so that
+	 any element that was previously black/gray becomes white.
+	 Note: this will also affect colored text utilities (e.g., red/blue).
+	 If you want to preserve some colored badges later, we can add specific
+	 exceptions. */
+html, body, body * {
+	color: #ffffff !important;
+}
+

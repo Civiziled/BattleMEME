@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\Battle;
+use App\Models\User;
+
+class BattlePolicy
+{
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Battle $battle): bool
+    {
+        // Tout le monde peut voir une battle
+        return true;
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        // Seuls les utilisateurs connectés peuvent créer des battles
+        return true;
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Battle $battle): bool
+    {
+        // Seul le créateur peut modifier sa battle
+        return $user->id === $battle->user_id;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Battle $battle): bool
+    {
+        // Seul le créateur peut supprimer sa battle
+        return $user->id === $battle->user_id;
+    }
+
+    /**
+     * Determine whether the user can submit memes to the battle.
+     */
+    public function submitMeme(User $user, Battle $battle): bool
+    {
+        // N'importe qui peut soumettre un mème si la battle est ouverte
+        return $battle->isOpen();
+    }
+
+    /**
+     * Determine whether the user can vote in the battle.
+     */
+    public function vote(User $user, Battle $battle): bool
+    {
+        // On peut voter seulement si la battle est ouverte
+        return $battle->isOpen();
+    }
+
+    /**
+     * Determine whether the user can view the battle's memes.
+     */
+    public function viewMemes(User $user, Battle $battle): bool
+    {
+        // Tout le monde peut voir les mèmes d'une battle
+        return true;
+    }
+}

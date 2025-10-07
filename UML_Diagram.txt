@@ -1,0 +1,162 @@
+DIAGRAMME DE CLASSES UML - BATTLE ARENA
+
+==========================================
+CLASSES PRINCIPALES
+==========================================
+
+User
+----
+- id: int (PK)
+- name: string
+- email: string (unique)
+- password: string
+- email_verified_at: timestamp
+- created_at: timestamp
+- updated_at: timestamp
+
++ battles(): HasMany
++ memes(): HasMany
++ votes(): HasMany
+
+Battle
+------
+- id: int (PK)
+- title: string
+- description: text
+- deadline: datetime
+- user_id: int (FK)
+- created_at: timestamp
+- updated_at: timestamp
+
++ user(): BelongsTo
++ memes(): HasMany
++ isOpen(): bool
++ getRankedMemes(): Collection
+
+Meme
+----
+- id: int (PK)
+- image_path: string
+- battle_id: int (FK)
+- user_id: int (FK)
+- created_at: timestamp
+- updated_at: timestamp
+
++ battle(): BelongsTo
++ user(): BelongsTo
++ votes(): HasMany
++ getVotesCountAttribute(): int
++ hasUserVoted(User): bool
+
+Vote
+----
+- id: int (PK)
+- user_id: int (FK)
+- meme_id: int (FK)
+- created_at: timestamp
+- updated_at: timestamp
+
++ user(): BelongsTo
++ meme(): BelongsTo
+
+==========================================
+RELATIONS
+==========================================
+
+User (1) -----> (N) Battle
+- Un utilisateur peut créer plusieurs battles
+- Une battle appartient à un seul utilisateur
+
+User (1) -----> (N) Meme
+- Un utilisateur peut soumettre plusieurs mèmes
+- Un mème appartient à un seul utilisateur
+
+Battle (1) -----> (N) Meme
+- Une battle peut contenir plusieurs mèmes
+- Un mème appartient à une seule battle
+
+User (1) -----> (N) Vote
+- Un utilisateur peut voter plusieurs fois
+- Un vote appartient à un seul utilisateur
+
+Meme (1) -----> (N) Vote
+- Un mème peut recevoir plusieurs votes
+- Un vote appartient à un seul mème
+
+==========================================
+CONTRAINTES D'INTÉGRITÉ
+==========================================
+
+1. Un utilisateur ne peut voter qu'une seule fois par mème
+   (contrainte unique sur user_id + meme_id)
+
+2. Un utilisateur ne peut pas voter pour ses propres mèmes
+   (vérification dans la logique métier)
+
+3. Les votes ne sont acceptés que sur les battles ouvertes
+   (vérification de la date limite)
+
+4. Les mèmes ne peuvent être soumis que sur les battles ouvertes
+   (vérification de la date limite)
+
+==========================================
+POLICIES & AUTORISATIONS
+==========================================
+
+BattlePolicy
+-----------
+- view(User, Battle): bool - Tout le monde peut voir
+- create(User): bool - Utilisateurs connectés
+- update(User, Battle): bool - Seul le créateur
+- delete(User, Battle): bool - Seul le créateur
+- submitMeme(User, Battle): bool - Si battle ouverte
+- vote(User, Battle): bool - Si battle ouverte
+
+MemePolicy
+----------
+- view(User, Meme): bool - Tout le monde peut voir
+- create(User): bool - Utilisateurs connectés
+- update(User, Meme): bool - Seul l'auteur
+- delete(User, Meme): bool - Seul l'auteur
+- vote(User, Meme): bool - Règles complexes
+
+==========================================
+MÉTHODES MÉTIER IMPORTANTES
+==========================================
+
+Battle::isOpen()
+- Vérifie si la battle est encore ouverte
+- Compare deadline avec now()
+
+Battle::getRankedMemes()
+- Retourne les mèmes classés par nombre de votes
+- Utilise withCount('votes') pour optimiser
+
+Meme::hasUserVoted(User)
+- Vérifie si un utilisateur a voté pour ce mème
+- Utilise where() sur la relation votes
+
+Meme::getVotesCountAttribute()
+- Accessor pour obtenir le nombre de votes
+- Utilise count() sur la relation votes
+
+==========================================
+MULTIPLICITÉS
+==========================================
+
+User (1) -----> (0..N) Battle
+User (1) -----> (0..N) Meme
+User (1) -----> (0..N) Vote
+Battle (1) -----> (0..N) Meme
+Meme (1) -----> (0..N) Vote
+
+==========================================
+NOTES TECHNIQUES
+==========================================
+
+- Utilisation d'Eloquent ORM de Laravel
+- Relations définies avec les méthodes hasMany/belongsTo
+- Validation des données avec Laravel Validator
+- Autorisations gérées avec Laravel Gates/Policies
+- Stockage des images avec Laravel Storage
+- Pagination automatique avec Laravel Paginator

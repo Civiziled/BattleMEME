@@ -1,0 +1,71 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Dashboard') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        🎉 Bienvenue dans Battle Arena !
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Vous êtes connecté et prêt à participer aux battles de mèmes. Créez des battles, soumettez vos mèmes et votez pour les plus drôles !
+                    </p>
+                </div>
+            </div>
+
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            🏆 Mes Battles
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">
+                            Gérez vos battles créées
+                        </p>
+                        <a href="{{ route('battles.index') }}" 
+                           class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                            Voir mes battles
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            ➕ Nouvelle Battle
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">
+                            Créez une nouvelle battle de mèmes
+                        </p>
+                        <a href="{{ route('battles.create') }}" 
+                           class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                            Créer une battle
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            🎭 Toutes les Battles
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">
+                            Découvrez et participez aux battles
+                        </p>
+                        <a href="{{ route('battles.index') }}" 
+                           class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                            Explorer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
